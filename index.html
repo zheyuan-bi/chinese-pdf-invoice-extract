@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invoice Text Extractor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@200..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="main">
+      <h1 id="title">电子发票 PDF 提取</h1>
+      <div id="drop-area">
+        <h3 id="upload-title">上传PDF文件</h3>
+        <input type="file" id="file-input" accept=".pdf" multiple />
+        <span id="file-status">0 PDF files selected</span>
+      </div>
+      <div id="output-container">
+        <div id="button-container">
+          <button id="copy-button">copy</button>
+          <button id="clear-button">clear</button>
+        </div>
+
+        <div id="output-table">
+          <div id="table-overlay"></div>
+          <table>
+            <thead>
+              <tr>
+                <th>发票号码</th>
+                <th>项目名称</th>
+                <th class="left">规格型号</th>
+                <th>单位</th>
+                <th class="right">数量</th>
+                <th class="right">单价</th>
+                <th class="right">金额</th>
+                <th>税率/征税率</th>
+                <th class="right">税额</th>
+              </tr>
+            </thead>
+            <!-- <tbody>
+              <tr>
+                <td class="new-invoice">25317xxxxxxxxxxx7778</td>
+                <td>*医疗仪器器械*牙科种植体</td>
+                <td class="left">K1046.3813</td>
+                <td>袋</td>
+                <td class="right">3</td>
+                <td class="right">999.75</td>
+                <td class="right">2999.35</td>
+                <td>6%</td>
+                <td class="right">179.955</td>
+              </tr>
+              <tr>
+                <td>25442xxxxxxxxx4918948</td>
+                <td>种植体</td>
+                <td class="left">K1046.3811</td>
+                <td>袋</td>
+                <td class="right">-1666</td>
+                <td class="right">999.41592857</td>
+                <td class="right">-10542902.65</td>
+                <td>13%</td>
+                <td class="right">-1417.35</td>
+              </tr>
+              <tr>
+                <td>25442xxxxxxxxx4918948</td>
+                <td>*医疗仪器器械*牙科</td>
+                <td class="left">K1046.4309 L IS FOR THE WAY YOU LOOK AT ME</td>
+                <td>袋袋袋袋袋</td>
+                <td class="right">-20000000</td>
+                <td class="right">322.41592857</td>
+                <td class="right">-136283.18</td>
+                <td></td>
+                <td class="right">0</td>
+              </tr>
+            </tbody> -->
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>

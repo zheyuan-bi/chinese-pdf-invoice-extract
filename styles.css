@@ -1,0 +1,173 @@
+body {
+  background-color: rgb(251, 251, 251);
+}
+
+#main {
+  background-color: rgb(245, 245, 245);
+  font-family: "Noto Serif SC", serif;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 30px 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#title {
+  border-radius: 10px;
+  width: 100%;
+  text-align: center;
+}
+
+#drop-area {
+  width: 60%;
+  border-radius: 10px;
+  padding: 20px;
+  border: 4px dashed rgb(69, 69, 69);
+  margin: 15px 0;
+  text-align: center;
+  transition: all ease 0.3s;
+}
+
+#drop-area:hover {
+  cursor: pointer;
+  background-color: rgb(251, 251, 251);
+  border-color: rgb(0, 184, 0);
+}
+
+#drop-area.highlight {
+  border-color: rgb(0, 184, 0);
+  background-color: rgb(179, 248, 179);
+}
+
+#file-input {
+  display: none;
+}
+
+#file-status {
+  font-family: "Helvetica";
+  font-size: 12px;
+}
+
+th,
+td {
+  text-align: center;
+  padding: 5px 10px;
+}
+
+th {
+  color: rgb(200, 74, 74);
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+td {
+  font-family: "helvetica";
+  font-size: 0.8rem;
+  /* transition: all ease 0.2s; */
+}
+
+th.left,
+td.left {
+  text-align: left;
+}
+
+th.right,
+td.right {
+  text-align: right;
+}
+
+td.new-invoice {
+  border-left-style: solid;
+  border-left-color: red;
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0 5px;
+  width: auto;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+#output-container {
+  background-color: rgb(251, 251, 251);
+  display: flex;
+  flex-direction: column;
+  margin: 30px 10px;
+  padding: 30px 10px 10px 10px;
+  width: 90%;
+  border-radius: 10px;
+  position: relative;
+  min-height: 20px;
+  align-items: center;
+  overflow-x: auto;
+}
+
+#button-container {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+button {
+  background-color: rgb(226, 238, 250);
+  border-radius: 10px;
+  border: none;
+  font-size: 0.9rem;
+  padding: 8px;
+  transition: all ease 0.2s;
+  min-width: 60px;
+}
+
+button:hover {
+  cursor: pointer;
+}
+
+button:active {
+  opacity: 0.6;
+}
+
+button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+#copy-button {
+  color: green;
+}
+
+#copy-button:not(:disabled):hover {
+  color: aliceblue;
+  background-color: green;
+}
+
+#clear-button {
+  color: red;
+}
+
+#clear-button:not(:disabled):hover {
+  color: black;
+  background-color: red;
+}
+
+#output-table {
+  position: relative;
+}
+
+#table-overlay {
+  position: absolute;
+  top: 50px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.85);
+  opacity: 0;
+  pointer-events: none;
+  transition: all ease 0.2s;
+}
+
+#drop-area.highlight ~ #output-container #table-overlay,
+#drop-area:hover ~ #output-container #table-overlay {
+  opacity: 1;
+}
