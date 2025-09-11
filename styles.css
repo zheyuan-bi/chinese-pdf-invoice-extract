@@ -165,9 +165,35 @@ button:disabled {
   opacity: 0;
   pointer-events: none;
   transition: all ease 0.2s;
+  z-index: 10;
 }
 
 #drop-area.highlight ~ #output-container #table-overlay,
 #drop-area:hover ~ #output-container #table-overlay {
+  opacity: 1;
+}
+
+tr[data-tooltip] {
+  position: relative;
+}
+
+tr[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 0%;
+  /* transform: translateY(-5px); */
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+tr[data-tooltip]:hover::after {
   opacity: 1;
 }

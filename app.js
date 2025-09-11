@@ -9,7 +9,8 @@ const outputTable = document.getElementById("output-table");
 const dropArea = document.getElementById("drop-area");
 const copyButton = document.getElementById("copy-button");
 const clearButton = document.getElementById("clear-button");
-const allLineItems = [];
+// const allLineItems = [];
+const allFilesData = [];
 const mainLinepattern = /^\*[^*]+\*.+$/;
 // There are 2 kinds of space elements in a row: meaningful and meaningless
 // Meaningful space: a divider of text, takes up a fixed width, usually 4.5. e.g. iPhone 12 Pro Max
@@ -72,17 +73,12 @@ async function processPDFFiles(PDFFiles) {
   const processingPromises = PDFFiles.map(processFile);
   try {
     const results = await Promise.all(processingPromises);
-    results.forEach((parsedData) => {
-      if (parsedData && parsedData.lineItems) {
-        parsedData.lineItems.forEach((item) => {
-          allLineItems.push({
-            发票号码: parsedData["发票号码"],
-            ...item,
-          });
-        });
+    results.forEach((fileData) => {
+      if (fileData) {
+        allFilesData.push(fileData);
       }
     });
-    renderTable(allLineItems);
+    renderTable(allFilesData);
     fileStatus.textContent = `${PDFFiles.length} PDF file(s) processed successfully.`;
   } catch (error) {
     console.error("An error occurred during batch processing:", error);
@@ -99,7 +95,7 @@ function processFile(file) {
     fileReader.onload = async () => {
       try {
         const typedarray = new Uint8Array(fileReader.result);
-        const parsedData = await extractText(typedarray);
+        const parsedData = await extractText(typedarray, file.name);
         // console.log(`--- Parsed Data for ${file.name} ---`, parsedData);
         resolve(parsedData);
       } catch (error) {
@@ -112,7 +108,7 @@ function processFile(file) {
   });
 }
 
-async function extractText(pdfData) {
+async function extractText(pdfData, fileName) {
   const CMAP_URL = "https://unpkg.com/pdfjs-dist@4.4.168/cmaps/";
   const CMAP_PACKED = true;
   const loadingTask = pdfjsLib.getDocument({
@@ -146,11 +142,17 @@ async function extractText(pdfData) {
     const lastLineItemRowNumber = getLastLineItemRowNumber(finalRows, headerRowNumber);
     const lineItemsRows = finalRows.slice(headerRowNumber + 1, lastLineItemRowNumber + 1);
     insertLineItems(lineItemsRows, combinedLineItems);
+
+    combinedLineItems.forEach((item) => {
+      item["发票号码"] = invoiceNumber;
+    });
   }
 
   return {
-    发票号码: invoiceNumber,
+    fileName: fileName,
+    invoiceNumber: invoiceNumber,
     lineItems: combinedLineItems,
+    id: Date.now() + Math.random(),
   };
 }
 
@@ -358,8 +360,8 @@ function getBelongingColumn(xStart, xCenter, xEnd, tolerance = 1) {
   return closestHeader;
 }
 
-function renderTable(data) {
-  if (data.length === 0) {
+function renderTable(files) {
+  if (files.length === 0) {
     outputTable.textContent = "No line items found.";
     return;
   }
@@ -376,23 +378,40 @@ function renderTable(data) {
   });
   thead.appendChild(headerRow);
 
-  let previousInvoiceNumber = "";
+  files.forEach((file) => {
+    if (file.lineItems && file.lineItems.length > 0) {
+      file.lineItems.forEach((item, index) => {
+        const row = document.createElement("tr");
+        row.setAttribute("data-tooltip", file.fileName);
+        displayColumns.forEach((column) => {
+          const cell = document.createElement("td");
+          const value = item[column.name];
+          cell.textContent = value !== undefined ? value : "";
+          cell.classList.add(column.alignment);
 
-  data.forEach((item) => {
-    const row = document.createElement("tr");
-    displayColumns.forEach((column) => {
+          // Mark the start of a file's data
+          if (index === 0 && column.name === "发票号码") {
+            cell.classList.add("new-invoice");
+          }
+          row.appendChild(cell);
+        });
+        tbody.appendChild(row);
+      });
+    } else {
+      // This file had no line items, so we render a status row
+      const row = document.createElement("tr");
       const cell = document.createElement("td");
-      const value = item[column.name];
-      cell.textContent = value !== null && value !== undefined ? value : "";
-      cell.classList.add(column.alignment);
-      if (column.name === "发票号码" && value !== previousInvoiceNumber) {
-        // Indicate the start of a new document
-        cell.classList.add("new-invoice");
-        previousInvoiceNumber = value;
-      }
+      row.setAttribute("data-tooltip", file.fileName);
+      // colspan makes this cell span the entire width of the table
+      cell.colSpan = displayColumns.length;
+      cell.textContent = `File: "${file.fileName}" - No line items found or file is not a valid invoice.`;
+      cell.style.textAlign = "left";
+      cell.style.color = "#777";
+      cell.classList.add("new-invoice");
+
       row.appendChild(cell);
-    });
-    tbody.appendChild(row);
+      tbody.appendChild(row);
+    }
   });
 
   table.appendChild(thead);
@@ -409,7 +428,7 @@ function clearPage() {
   outputTable.appendChild(overlayDiv);
 
   fileStatus.textContent = "0 PDF files selected";
-  allLineItems.length = 0;
+  allFilesData.length = 0;
 }
 
 clearButton.addEventListener("click", () => {
