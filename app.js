@@ -126,7 +126,7 @@ async function extractText(pdfData, fileName) {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const textContent = await page.getTextContent();
-    console.log(textContent);
+    // console.log(textContent);
     if (textContent.items.length === 0) continue;
     let rows = textContent.items.sort((a, b) => b.transform[5] - a.transform[5]);
     rows = mergeNearbyRows(rows);
@@ -452,14 +452,16 @@ function renderClick(button) {
 }
 
 function writeDataToClipboard() {
-  if (allLineItems.length === 0) {
+  const allLines = allFilesData.flatMap((file) => file.lineItems);
+
+  if (allLines.length === 0) {
     navigator.clipboard.writeText("https://www.goldennumber.net/wp-content/uploads/pepsi-arnell-021109.pdf");
     return;
   }
 
   const headerString = displayColumns.map((column) => column.name).join("\t");
 
-  const lineStrings = allLineItems.map((lineItem) => {
+  const lineStrings = allLines.map((lineItem) => {
     return displayColumns
       .map((column) => {
         let value = lineItem[column.name];
