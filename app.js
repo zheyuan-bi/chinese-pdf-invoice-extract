@@ -126,7 +126,8 @@ async function extractText(pdfData, fileName) {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const textContent = await page.getTextContent();
-    // console.log(textContent);
+    console.log(textContent);
+    if (textContent.items.length === 0) continue;
     let rows = textContent.items.sort((a, b) => b.transform[5] - a.transform[5]);
     rows = mergeNearbyRows(rows);
     rows.forEach((row) => row.sort((a, b) => a.transform[4] - b.transform[4]));
@@ -171,11 +172,10 @@ function findInvoiceNumber(rows) {
   return "发票号码 is not found";
 }
 
-function mergeNearbyRows(sortedRows, tolerance = 7) {
-  // a character is at least 9 in height, plus some margin, vertical tolerance should be around 9
-  // However, sometimes the first line item can get intrude column header's vertical range, closing the gap to around 8
-  // Also, the value of 小计/合计 can sometimes be 6 or 7 higher than the text 小计/合计
-  // So items that should be on the same line can sometimes be far apart, while items that should be on differnt lines can sometimes be really close. Tolerance is tricky
+function mergeNearbyRows(sortedRows, tolerance = 6.5) {
+  // Character width: chinese 9/5, number 9, ¥ 11
+  // Smallest vertical gap between 2 blocks that don't belong to the same row: 6.60
+  // Largest vertical gap between 2 blocks that do belong to the same row: 6.09
   const rows = [];
   let currentRow = [];
   if (sortedRows.length > 0) {
