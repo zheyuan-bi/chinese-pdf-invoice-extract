@@ -2,7 +2,6 @@ import * as pdfjsLib from "https://unpkg.com/pdfjs-dist@4.4.168/build/pdf.mjs";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "https://unpkg.com/pdfjs-dist@4.4.168/build/pdf.worker.mjs";
 
-// --- DOM ELEMENTS AND GLOBAL STATE ---
 const fileInput = document.getElementById("file-input");
 const fileStatus = document.getElementById("file-status");
 const outputTable = document.getElementById("output-table");
@@ -43,7 +42,6 @@ const displayColumns = [
   { name: "税额", alignment: "right" },
 ];
 
-// --- EVENT LISTENERS (No Changes) ---
 ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
   dropArea.addEventListener(eventName, preventDefaults, false);
 });
@@ -173,7 +171,7 @@ function findInvoiceNumber(rows) {
 }
 
 function mergeNearbyRows(sortedRows, tolerance = 6.5) {
-  // Character width: chinese 9/5, number 9, ¥ 11
+  // Character height: chinese 9/5, number 9, ¥ 11
   // Smallest vertical gap between 2 blocks that don't belong to the same row: 6.60
   // Largest vertical gap between 2 blocks that do belong to the same row: 6.09
   const rows = [];
