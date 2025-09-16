@@ -4,11 +4,10 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "https://unpkg.com/pdfjs-dist@4.4.168/b
 
 const fileInput = document.getElementById("file-input");
 const fileStatus = document.getElementById("file-status");
-const outputTable = document.getElementById("output-table");
+const tableBody = document.getElementById("table-body");
 const dropArea = document.getElementById("drop-area");
 const copyButton = document.getElementById("copy-button");
 const clearButton = document.getElementById("clear-button");
-// const allLineItems = [];
 const allFilesData = [];
 const mainLinepattern = /^\*[^*]+\*.+$/;
 // There are 2 kinds of space elements in a row: meaningful and meaningless
@@ -360,21 +359,9 @@ function getBelongingColumn(xStart, xCenter, xEnd, tolerance = 1) {
 
 function renderTable(files) {
   if (files.length === 0) {
-    outputTable.textContent = "No line items found.";
+    tableBody.textContent = "No line items found.";
     return;
   }
-  const table = document.createElement("table");
-  const thead = document.createElement("thead");
-  const tbody = document.createElement("tbody");
-  const headerRow = document.createElement("tr");
-
-  displayColumns.forEach((column) => {
-    const th = document.createElement("th");
-    th.textContent = column.name;
-    th.classList.add(column.alignment);
-    headerRow.appendChild(th);
-  });
-  thead.appendChild(headerRow);
 
   files.forEach((file) => {
     if (file.lineItems && file.lineItems.length > 0) {
@@ -393,7 +380,7 @@ function renderTable(files) {
           }
           row.appendChild(cell);
         });
-        tbody.appendChild(row);
+        tableBody.appendChild(row);
       });
     } else {
       // This file had no line items, so we render a status row
@@ -408,23 +395,14 @@ function renderTable(files) {
       cell.classList.add("new-invoice");
 
       row.appendChild(cell);
-      tbody.appendChild(row);
+      tableBody.appendChild(row);
     }
   });
-
-  table.appendChild(thead);
-  table.appendChild(tbody);
-  outputTable.appendChild(table);
 }
 
 function clearPage() {
   fileInput.value = null;
-  outputTable.innerHTML = "";
-
-  const overlayDiv = document.createElement("div");
-  overlayDiv.id = "table-overlay";
-  outputTable.appendChild(overlayDiv);
-
+  tableBody.innerText = "";
   fileStatus.textContent = "0 PDF files selected";
   allFilesData.length = 0;
 }
@@ -440,11 +418,11 @@ copyButton.addEventListener("click", () => {
 });
 
 function renderClick(button) {
-  const originalTextContent = button.textContent;
+  const originalHTML = button.innerHTML;
   button.textContent = "✔";
   button.disabled = true;
   setTimeout(() => {
-    button.textContent = originalTextContent;
+    button.innerHTML = originalHTML;
     button.disabled = false;
   }, 2000);
 }

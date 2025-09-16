@@ -139,6 +139,11 @@ button:disabled {
   cursor: not-allowed;
 }
 
+button svg {
+  width: 16px;
+  height: 16px;
+}
+
 #copy-button {
   color: green;
 }
@@ -153,7 +158,7 @@ button:disabled {
 }
 
 #clear-button:not(:disabled):hover {
-  color: black;
+  color: yellow;
   background-color: red;
 }
 
