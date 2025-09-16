@@ -36,9 +36,7 @@ function handleFiles(files) {
   allFilesData.length = 0;
 
   fileStatus.textContent = `${selectedPDFFiles.length} PDF files selected`;
-  setTimeout(() => {
-    processPDFFiles(selectedPDFFiles);
-  }, 500);
+  processPDFFiles(selectedPDFFiles);
 }
 
 async function processPDFFiles(PDFFiles) {
