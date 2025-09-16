@@ -140,11 +140,11 @@ async function extractText(pdfData, fileName) {
     const lastLineItemRowNumber = getLastLineItemRowNumber(finalRows, headerRowNumber);
     const lineItemsRows = finalRows.slice(headerRowNumber + 1, lastLineItemRowNumber + 1);
     insertLineItems(lineItemsRows, combinedLineItems);
-
-    combinedLineItems.forEach((item) => {
-      item["发票号码"] = invoiceNumber;
-    });
   }
+
+  combinedLineItems.forEach((item) => {
+    item["发票号码"] = invoiceNumber;
+  });
 
   return {
     fileName: fileName,
