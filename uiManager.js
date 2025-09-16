@@ -10,6 +10,7 @@ const displayColumns = [
   { name: "税额", alignment: "right" },
 ];
 
+const mainContainer = document.getElementById("main-container");
 const fileInput = document.getElementById("file-input");
 const fileStatus = document.getElementById("file-status");
 const tableBody = document.getElementById("table-body");
@@ -77,6 +78,7 @@ function renderClick(button) {
 }
 
 export {
+  mainContainer,
   fileInput,
   fileStatus,
   dropArea,

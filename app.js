@@ -1,5 +1,6 @@
 import { extractText } from "./pdfParser.js";
 import {
+  mainContainer,
   fileInput,
   fileStatus,
   dropArea,
@@ -29,14 +30,20 @@ function preventDefaults(e) {
   e.stopPropagation();
 }
 
-function handleFiles(files) {
+async function handleFiles(files) {
+  mainContainer.style.animationPlayState = "running";
+
   const selectedPDFFiles = Array.from(files).filter((file) => file.name.toLowerCase().endsWith(".pdf"));
 
   clearPage();
   allFilesData.length = 0;
 
   fileStatus.textContent = `${selectedPDFFiles.length} PDF files selected`;
-  processPDFFiles(selectedPDFFiles);
+
+  // Allow loading animation to run for at least 1 second
+  await Promise.all([processPDFFiles(selectedPDFFiles), new Promise((resolve) => setTimeout(resolve, 1000))]);
+
+  mainContainer.style.animationPlayState = "paused";
 }
 
 async function processPDFFiles(PDFFiles) {
