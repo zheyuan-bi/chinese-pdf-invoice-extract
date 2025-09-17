@@ -27,18 +27,18 @@ async function extractText(pdfData, fileName) {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const textContent = await page.getTextContent();
-    // console.log(textContent.items);
     if (textContent.items.length === 0) continue;
+
     let rows = textContent.items.sort((a, b) => b.transform[5] - a.transform[5]);
-    rows = mergeNearbyRows(rows);
+    rows = groupNearbyRows(rows);
     rows.forEach((row) => row.sort((a, b) => a.transform[4] - b.transform[4]));
     const finalRows = rows.map((row) => mergeContinuousBlocks(row));
-    // console.log(finalRows);
+
     if (invoiceNumber === "Not Found") invoiceNumber = findInvoiceNumber(finalRows);
 
     if (headerRowNumber === 0) {
       headerRowNumber = getHeaderRowNumber(finalRows);
-      columnHeaders = getHeaderCoordinate(finalRows[headerRowNumber]);
+      columnHeaders = getHeaderXCoordinate(finalRows[headerRowNumber]);
     }
 
     const lastLineItemRowNumber = getLastLineItemRowNumber(finalRows, headerRowNumber);
@@ -73,17 +73,27 @@ function findInvoiceNumber(rows) {
   return "发票号码 is not found";
 }
 
-function mergeNearbyRows(sortedRows, tolerance = 6.5) {
-  // Character height: chinese 9/5, number 9, ¥ 11
-  // Smallest vertical gap between 2 blocks that don't belong to the same row: 6.60
-  // Largest vertical gap between 2 blocks that do belong to the same row: 6.09
+/**
+ * Groups nearby rows based on their vertical positions.
+ * @param {Array<Object>} sortedRows - Array of text blocks sorted by y coordinate (top to bottom).
+ * @returns {Array<Array<Object>>} - Array of grouped rows, each row is an array of text blocks.
+ */
+function groupNearbyRows(sortedRows) {
+  // Set the tolerance as a linear func of character height lest tiny text gets grouped into the row above
+  // Experience from test files shows that tolerance = 0.8 * height works
+  // Smallest vertical gap known between 2 blocks that SHOULDN'T belong to the same row: 6.60
+  // upperBlock = {height: 9, y: 240.992}, lowerBlock = {height: 5, y: 234.39}
+  // Largest vertical gap known between 2 blocks that SHOULD belong to the same row: 6.93
+  // upperBlock = {height: 10.99, y: 148.616}, lowerBlock = {height: 8.99, y: 141.683}
   const rows = [];
   let currentRow = [];
   if (sortedRows.length > 0) {
     let prevY = sortedRows[0].transform[5];
     for (const item of sortedRows) {
       const y = item.transform[5];
-      if (prevY - y <= tolerance) {
+      const height = item.height;
+      const tolerance = height * 0.8;
+      if (height === 0 || prevY - y <= tolerance) {
         currentRow.push(item);
       } else {
         rows.push(currentRow);
@@ -143,7 +153,8 @@ function getHeaderRowNumber(rows) {
 
 function getLastLineItemRowNumber(rows, headerRowLineNumber) {
   const defaultLastLineItemRowNumber = rows.length - 1;
-  const regex = /(小.*计.*¥.+|合.*计.*¥.+)/; // This is the line immediately after the last line item
+  // The row below the last valid line item row is either: "小计 ¥ xxx.xx ¥ xxx.xx" or "合计 ¥ xxx.xx ¥ xxx.xx"
+  const regex = /(小.*计.*¥.+|合.*计.*¥.+)/;
 
   for (let i = headerRowLineNumber + 1; i < rows.length; i++) {
     const rowText = rows[i].map((block) => block.str).join("");
@@ -156,7 +167,7 @@ function getLastLineItemRowNumber(rows, headerRowLineNumber) {
   return defaultLastLineItemRowNumber;
 }
 
-function getHeaderCoordinate(headerRow) {
+function getHeaderXCoordinate(headerRow) {
   let currentItemIndex = 0;
   const columnHeaders = [
     // LeftBounded: contents of this column cannot go further left than xStart. Contents are either left aligned or all short and centered
