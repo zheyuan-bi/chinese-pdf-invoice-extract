@@ -7,19 +7,6 @@ const mainLinepattern = /^\*[^*]+\*.+$/;
 // Meaningful space: a divider of text, takes up a fixed width, usually 4.5. e.g. iPhone 12 Pro Max
 // Meaningless space: fills the gap between distinct blocks, takes up random width, e.g. iPad 2 pcs 999 1998 13% 259.74
 const WIDTH_OF_MEANINGFUL_SPACE = 4.5;
-const columnHeaders = [
-  // LeftBounded: contents of this column cannot go further left than xStart. Contents are either left aligned or all short and centered
-  // Both leftBounded and rightBounded: contents are all short, can be either center, left or right
-  // Neither side bounded: contents are definitely centered, there EXISTS long rows
-  { name: "项目名称", xStart: null, xCenter: null, xEnd: null, leftBounded: false, rightBounded: false },
-  { name: "规格型号", xStart: null, xCenter: null, xEnd: null, leftBounded: true, rightBounded: false },
-  { name: "单位", xStart: null, xCenter: null, xEnd: null, leftBounded: true, rightBounded: true },
-  { name: "数量", xStart: null, xCenter: null, xEnd: null, leftBounded: false, rightBounded: true },
-  { name: "单价", xStart: null, xCenter: null, xEnd: null, leftBounded: false, rightBounded: true },
-  { name: "金额", xStart: null, xCenter: null, xEnd: null, leftBounded: false, rightBounded: true },
-  { name: "税率/征收率", xStart: null, xCenter: null, xEnd: null, leftBounded: true, rightBounded: true },
-  { name: "税额", xStart: null, xCenter: null, xEnd: null, leftBounded: false, rightBounded: true },
-];
 
 async function extractText(pdfData, fileName) {
   const CMAP_URL = "https://unpkg.com/pdfjs-dist@4.4.168/cmaps/";
@@ -33,13 +20,14 @@ async function extractText(pdfData, fileName) {
 
   let combinedLineItems = [];
   let invoiceNumber = "Not Found";
-  // For different pages of the same file, header row number is the same
+  // For different pages of the same file, header row number and header coordinates are the same
   let headerRowNumber = 0;
+  let headerCoordinates;
 
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const textContent = await page.getTextContent();
-    // console.log(textContent);
+    // console.log(textContent.items);
     if (textContent.items.length === 0) continue;
     let rows = textContent.items.sort((a, b) => b.transform[5] - a.transform[5]);
     rows = mergeNearbyRows(rows);
@@ -50,12 +38,12 @@ async function extractText(pdfData, fileName) {
 
     if (headerRowNumber === 0) {
       headerRowNumber = getHeaderRowNumber(finalRows);
-      setHeaderCoordinate(finalRows[headerRowNumber]);
+      headerCoordinates = getHeaderCoordinate(finalRows[headerRowNumber]);
     }
 
     const lastLineItemRowNumber = getLastLineItemRowNumber(finalRows, headerRowNumber);
     const lineItemsRows = finalRows.slice(headerRowNumber + 1, lastLineItemRowNumber + 1);
-    insertLineItems(lineItemsRows, combinedLineItems);
+    insertLineItems(lineItemsRows, combinedLineItems, headerCoordinates);
   }
 
   combinedLineItems.forEach((item) => {
@@ -168,8 +156,21 @@ function getLastLineItemRowNumber(rows, headerRowLineNumber) {
   return defaultLastLineItemRowNumber;
 }
 
-function setHeaderCoordinate(headerRow) {
+function getHeaderCoordinate(headerRow) {
   let currentItemIndex = 0;
+  const columnHeaders = [
+    // LeftBounded: contents of this column cannot go further left than xStart. Contents are either left aligned or all short and centered
+    // Both leftBounded and rightBounded: contents are all short, can be either center, left or right
+    // Neither side bounded: contents are definitely centered, there EXISTS long rows
+    { name: "项目名称", xStart: null, xCenter: null, xEnd: null, leftBounded: false, rightBounded: false },
+    { name: "规格型号", xStart: null, xCenter: null, xEnd: null, leftBounded: true, rightBounded: false },
+    { name: "单位", xStart: null, xCenter: null, xEnd: null, leftBounded: true, rightBounded: true },
+    { name: "数量", xStart: null, xCenter: null, xEnd: null, leftBounded: false, rightBounded: true },
+    { name: "单价", xStart: null, xCenter: null, xEnd: null, leftBounded: false, rightBounded: true },
+    { name: "金额", xStart: null, xCenter: null, xEnd: null, leftBounded: false, rightBounded: true },
+    { name: "税率/征收率", xStart: null, xCenter: null, xEnd: null, leftBounded: true, rightBounded: true },
+    { name: "税额", xStart: null, xCenter: null, xEnd: null, leftBounded: false, rightBounded: true },
+  ];
 
   columnHeaders.forEach((header) => {
     const headerName = header.name;
@@ -199,10 +200,11 @@ function setHeaderCoordinate(headerRow) {
       }
     }
   });
-  // console.log(columnHeaders);
+
+  return columnHeaders;
 }
 
-function insertLineItems(lines, linesData) {
+function insertLineItems(lines, linesData, headerCoordinates) {
   lines.forEach((line) => {
     const lineText = line.map((block) => block.str).join("");
     const isMainLine = mainLinepattern.test(lineText);
@@ -224,7 +226,7 @@ function insertLineItems(lines, linesData) {
       if (block.str.trim() === "") return;
 
       const xCenter = (block.xStart + block.xEnd) / 2;
-      const belongingColumn = getBelongingColumn(block.xStart, xCenter, block.xEnd);
+      const belongingColumn = getBelongingColumn(headerCoordinates, block.xStart, xCenter, block.xEnd);
 
       if (belongingColumn) {
         // This is the key: Append the text to the correct property on the CURRENT item.
@@ -235,19 +237,20 @@ function insertLineItems(lines, linesData) {
   });
 }
 
-function getBelongingColumn(xStart, xCenter, xEnd, tolerance = 1) {
-  for (let i = 0; i < columnHeaders.length; i++) {
-    const header = columnHeaders[i];
+function getBelongingColumn(headerCoordinates, xStart, xCenter, xEnd, tolerance = 1) {
+  for (let i = 0; i < headerCoordinates.length; i++) {
+    const header = headerCoordinates[i];
     if (!header.xStart) continue; // Skip headers that weren't found
     const isCentered = header.xStart - tolerance <= xCenter && xCenter <= header.xEnd + tolerance;
     const isRightAligned = Math.abs(xEnd - header.xEnd) <= tolerance;
     const isLeftAligned = Math.abs(xStart - header.xStart) <= tolerance;
+
     if (isCentered || isRightAligned || isLeftAligned) {
       return header.name;
     }
 
-    const nextHeader = i + 1 < columnHeaders.length ? columnHeaders[i + 1] : null;
-    const previousHeader = i - 1 > -1 ? columnHeaders[i - 1] : null;
+    const nextHeader = i + 1 < headerCoordinates.length ? headerCoordinates[i + 1] : null;
+    const previousHeader = i - 1 > -1 ? headerCoordinates[i - 1] : null;
 
     if (nextHeader && header.xEnd + tolerance < xCenter) {
       const endsBeforeNextColumn = xEnd + tolerance < nextHeader.xStart;
@@ -262,7 +265,7 @@ function getBelongingColumn(xStart, xCenter, xEnd, tolerance = 1) {
   // Fallback: find the closest header by center point
   let closestHeader = null;
   let minDistance = Infinity;
-  for (const header of columnHeaders) {
+  for (const header of headerCoordinates) {
     if (!header.xCenter) continue;
     const distance = Math.abs(xCenter - header.xCenter);
     if (distance < minDistance) {

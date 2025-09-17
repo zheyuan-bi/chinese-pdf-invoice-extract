@@ -40,10 +40,12 @@ async function handleFiles(files) {
 
   fileStatus.textContent = `${selectedPDFFiles.length} PDF files selected`;
 
-  // Allow loading animation to run for at least 1 second
-  await Promise.all([processPDFFiles(selectedPDFFiles), new Promise((resolve) => setTimeout(resolve, 1000))]);
+  await processPDFFiles(selectedPDFFiles);
 
-  mainContainer.style.animationPlayState = "paused";
+  // Let the loading animation linger 1 second after task finishes, especially nice for small tasks that end early
+  setTimeout(() => {
+    mainContainer.style.animationPlayState = "paused";
+  }, 1000);
 }
 
 async function processPDFFiles(PDFFiles) {
