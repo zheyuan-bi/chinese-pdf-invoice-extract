@@ -22,7 +22,7 @@ async function extractText(pdfData, fileName) {
   let invoiceNumber = "Not Found";
   // For different pages of the same file, header row number and header coordinates are the same
   let headerRowNumber = 0;
-  let headerCoordinates;
+  let columnHeaders;
 
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
@@ -38,12 +38,12 @@ async function extractText(pdfData, fileName) {
 
     if (headerRowNumber === 0) {
       headerRowNumber = getHeaderRowNumber(finalRows);
-      headerCoordinates = getHeaderCoordinate(finalRows[headerRowNumber]);
+      columnHeaders = getHeaderCoordinate(finalRows[headerRowNumber]);
     }
 
     const lastLineItemRowNumber = getLastLineItemRowNumber(finalRows, headerRowNumber);
     const lineItemsRows = finalRows.slice(headerRowNumber + 1, lastLineItemRowNumber + 1);
-    insertLineItems(lineItemsRows, combinedLineItems, headerCoordinates);
+    insertLineItems(lineItemsRows, combinedLineItems, columnHeaders);
   }
 
   combinedLineItems.forEach((item) => {
@@ -204,7 +204,7 @@ function getHeaderCoordinate(headerRow) {
   return columnHeaders;
 }
 
-function insertLineItems(lines, linesData, headerCoordinates) {
+function insertLineItems(lines, linesData, columnHeaders) {
   lines.forEach((line) => {
     const lineText = line.map((block) => block.str).join("");
     const isMainLine = mainLinepattern.test(lineText);
@@ -226,7 +226,7 @@ function insertLineItems(lines, linesData, headerCoordinates) {
       if (block.str.trim() === "") return;
 
       const xCenter = (block.xStart + block.xEnd) / 2;
-      const belongingColumn = getBelongingColumn(headerCoordinates, block.xStart, xCenter, block.xEnd);
+      const belongingColumn = getBelongingColumn(columnHeaders, block.xStart, xCenter, block.xEnd);
 
       if (belongingColumn) {
         // This is the key: Append the text to the correct property on the CURRENT item.
@@ -237,9 +237,9 @@ function insertLineItems(lines, linesData, headerCoordinates) {
   });
 }
 
-function getBelongingColumn(headerCoordinates, xStart, xCenter, xEnd, tolerance = 1) {
-  for (let i = 0; i < headerCoordinates.length; i++) {
-    const header = headerCoordinates[i];
+function getBelongingColumn(columnHeaders, xStart, xCenter, xEnd, tolerance = 1) {
+  for (let i = 0; i < columnHeaders.length; i++) {
+    const header = columnHeaders[i];
     if (!header.xStart) continue; // Skip headers that weren't found
     const isCentered = header.xStart - tolerance <= xCenter && xCenter <= header.xEnd + tolerance;
     const isRightAligned = Math.abs(xEnd - header.xEnd) <= tolerance;
@@ -249,8 +249,8 @@ function getBelongingColumn(headerCoordinates, xStart, xCenter, xEnd, tolerance 
       return header.name;
     }
 
-    const nextHeader = i + 1 < headerCoordinates.length ? headerCoordinates[i + 1] : null;
-    const previousHeader = i - 1 > -1 ? headerCoordinates[i - 1] : null;
+    const nextHeader = i + 1 < columnHeaders.length ? columnHeaders[i + 1] : null;
+    const previousHeader = i - 1 > -1 ? columnHeaders[i - 1] : null;
 
     if (nextHeader && header.xEnd + tolerance < xCenter) {
       const endsBeforeNextColumn = xEnd + tolerance < nextHeader.xStart;
@@ -265,7 +265,7 @@ function getBelongingColumn(headerCoordinates, xStart, xCenter, xEnd, tolerance 
   // Fallback: find the closest header by center point
   let closestHeader = null;
   let minDistance = Infinity;
-  for (const header of headerCoordinates) {
+  for (const header of columnHeaders) {
     if (!header.xCenter) continue;
     const distance = Math.abs(xCenter - header.xCenter);
     if (distance < minDistance) {
