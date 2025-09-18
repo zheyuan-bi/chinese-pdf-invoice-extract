@@ -20,7 +20,13 @@ const clearButton = document.getElementById("clear-button");
 
 function renderTable(files) {
   if (files.length === 0) {
-    tableBody.textContent = "No line items found.";
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.textContent = "No pdf file detected";
+    cell.colSpan = displayColumns.length;
+    cell.classList.add("no-pdf-files");
+    row.appendChild(cell);
+    tableBody.appendChild(row);
     return;
   }
 
