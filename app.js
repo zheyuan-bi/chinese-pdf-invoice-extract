@@ -59,6 +59,7 @@ async function processPDFFiles(PDFFiles) {
     });
     renderTable(allFilesData);
     fileStatus.textContent = `${PDFFiles.length} PDF file(s) processed successfully.`;
+    window.scrollTo({ left: 0, top: document.body.scrollHeight, behavior: "smooth" });
   } catch (error) {
     console.error("An error occurred during batch processing:", error);
     fileStatus.textContent = `Error: ${error.message}`;
@@ -100,7 +101,7 @@ function writeDataToClipboard() {
   const allLines = allFilesData.flatMap((file) => file.lineItems);
 
   if (allLines.length === 0) {
-    navigator.clipboard.writeText("https://www.goldennumber.net/wp-content/uploads/pepsi-arnell-021109.pdf");
+    navigator.clipboard.writeText("https://isotropic.org/papers/chicken.pdf");
     return;
   }
 

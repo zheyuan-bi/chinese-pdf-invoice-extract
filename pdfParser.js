@@ -6,7 +6,7 @@ const mainLinepattern = /^\*[^*]+\*.+$/;
 // There are 2 kinds of space elements in a row: meaningful and meaningless
 // Meaningful space: a divider of text, takes up a fixed width, usually 4.5. e.g. iPhone 12 Pro Max
 // Meaningless space: fills the gap between distinct blocks, takes up random width, e.g. iPad 2 pcs 999 1998 13% 259.74
-const WIDTH_OF_MEANINGFUL_SPACE = 4.5;
+const WIDTH_OF_MEANINGFUL_SPACE_45 = 4.5;
 
 async function extractText(pdfData, fileName) {
   const CMAP_URL = "https://unpkg.com/pdfjs-dist@4.4.168/cmaps/";
@@ -113,21 +113,16 @@ function mergeContinuousBlocks(row, tolerance = 1) {
     const { width, str } = block;
     const xStart = block.transform[4];
     const xEnd = xStart + width;
-
     const previousBlock = result[result.length - 1];
 
+    if (str.trim() === "" && Math.abs(width - WIDTH_OF_MEANINGFUL_SPACE_45) > 0.1) {
+      return; //It's a space, but not a meaningful space, ignore
+    }
+
     if (previousBlock && Math.abs(xStart - previousBlock.xEnd) <= tolerance) {
-      if (str !== " ") {
-        previousBlock.str += str;
-        // Do NOT increment from the xStart of first character because it will amplify errors
-        previousBlock.xEnd = xEnd;
-      } else {
-        // Only append the content of meaningful spaces
-        if (Math.abs(width - WIDTH_OF_MEANINGFUL_SPACE) < 0.1) {
-          previousBlock.str += " ";
-        }
-        // Spaces will fill the gap between blocks, do NOT update xEnd, otherwise non-continuous blocks will be merged
-      }
+      previousBlock.str += str;
+      // Do NOT increment from the xStart of first character because it will amplify errors
+      previousBlock.xEnd = xEnd;
     } else {
       const newBlock = { xStart, xEnd, str };
       result.push(newBlock);
@@ -170,17 +165,17 @@ function getLastLineItemRowNumber(rows, headerRowLineNumber) {
 function getHeaderXCoordinate(headerRow) {
   let currentItemIndex = 0;
   const columnHeaders = [
-    // LeftBounded: contents of this column cannot go further left than xStart. Contents are either left aligned or all short and centered
-    // Both leftBounded and rightBounded: contents are all short, can be either center, left or right
-    // Neither side bounded: contents are definitely centered, there EXISTS long rows
-    { name: "项目名称", xStart: null, xCenter: null, xEnd: null, leftBounded: false, rightBounded: false },
-    { name: "规格型号", xStart: null, xCenter: null, xEnd: null, leftBounded: true, rightBounded: false },
-    { name: "单位", xStart: null, xCenter: null, xEnd: null, leftBounded: true, rightBounded: true },
-    { name: "数量", xStart: null, xCenter: null, xEnd: null, leftBounded: false, rightBounded: true },
-    { name: "单价", xStart: null, xCenter: null, xEnd: null, leftBounded: false, rightBounded: true },
-    { name: "金额", xStart: null, xCenter: null, xEnd: null, leftBounded: false, rightBounded: true },
-    { name: "税率/征收率", xStart: null, xCenter: null, xEnd: null, leftBounded: true, rightBounded: true },
-    { name: "税额", xStart: null, xCenter: null, xEnd: null, leftBounded: false, rightBounded: true },
+    //xStart, xEnd: x coordinate of start/end of header text, fixed
+    //contentXStart, contentXEnd: x coordinate of start/end of contents, updated to indicate the largest content span
+    /* Example: 项目名称 is found to be xStart: 70, xEnd: 100. One of its line items is A-long-text which will make the content span contentXStart: 50, contentXEnd: 120. Then any following items that fall between 50 and 120 should be recognized as 项目名称. contentXStart/contentXEnd will only be updated if something like A-very-long-text that spans even wider appear. */
+    { name: "项目名称", xStart: null, xCenter: null, xEnd: null, contentXStart: null, contentXEnd: null },
+    { name: "规格型号", xStart: null, xCenter: null, xEnd: null, contentXStart: null, contentXEnd: null },
+    { name: "单位", xStart: null, xCenter: null, xEnd: null, contentXStart: null, contentXEnd: null },
+    { name: "数量", xStart: null, xCenter: null, xEnd: null, contentXStart: null, contentXEnd: null },
+    { name: "单价", xStart: null, xCenter: null, xEnd: null, contentXStart: null, contentXEnd: null },
+    { name: "金额", xStart: null, xCenter: null, xEnd: null, contentXStart: null, contentXEnd: null },
+    { name: "税率/征收率", xStart: null, xCenter: null, xEnd: null, contentXStart: null, contentXEnd: null },
+    { name: "税额", xStart: null, xCenter: null, xEnd: null, contentXStart: null, contentXEnd: null },
   ];
 
   columnHeaders.forEach((header) => {
@@ -199,12 +194,14 @@ function getHeaderXCoordinate(headerRow) {
 
       if (header.xStart === null && headerBlock.str.includes(startChar)) {
         header.xStart = headerBlock.xStart;
+        header.contentXStart = header.xStart;
       }
 
       if (headerBlock.str.includes(endChar)) {
         if (headerName === "税率/征收率" && !haveSeenZheng) continue;
 
         header.xEnd = headerBlock.xEnd;
+        header.contentXEnd = header.xEnd;
         header.xCenter = (header.xStart + header.xEnd) / 2;
         currentItemIndex = i + 1; // start from the next block for the next header
         break;
@@ -252,25 +249,23 @@ function getBelongingColumn(columnHeaders, xStart, xCenter, xEnd, tolerance = 1)
   for (let i = 0; i < columnHeaders.length; i++) {
     const header = columnHeaders[i];
     if (!header.xStart) continue; // Skip headers that weren't found
-    const isCentered = header.xStart - tolerance <= xCenter && xCenter <= header.xEnd + tolerance;
-    const isRightAligned = Math.abs(xEnd - header.xEnd) <= tolerance;
-    const isLeftAligned = Math.abs(xStart - header.xStart) <= tolerance;
 
-    if (isCentered || isRightAligned || isLeftAligned) {
+    //1st attempt: use header text range
+    const isCenterContained = header.xStart - tolerance <= xCenter && xCenter <= header.xEnd + tolerance;
+    const isRightContained = header.xStart - tolerance <= xEnd && xEnd <= header.xEnd + tolerance;
+    const isLeftContained = header.xStart - tolerance <= xStart && xStart <= header.xEnd + tolerance;
+
+    if (isCenterContained || isRightContained || isLeftContained) {
+      header.contentXStart = Math.min(header.contentXStart, xStart);
+      header.contentXEnd = Math.max(header.contentXEnd, xEnd);
       return header.name;
     }
 
-    const nextHeader = i + 1 < columnHeaders.length ? columnHeaders[i + 1] : null;
-    const previousHeader = i - 1 > -1 ? columnHeaders[i - 1] : null;
-
-    if (nextHeader && header.xEnd + tolerance < xCenter) {
-      const endsBeforeNextColumn = xEnd + tolerance < nextHeader.xStart;
-      if (nextHeader.leftBounded && endsBeforeNextColumn) return header.name;
-    }
-
-    if (previousHeader && xCenter < header.xStart - tolerance) {
-      const startsAfterPreviousColumn = previousHeader.xEnd + tolerance < xStart;
-      if (previousHeader.rightBounded && startsAfterPreviousColumn) return header.name;
+    //2nd attempt: use the previously discovered largest content range
+    const isCenterContainedByPrevContents =
+      header.contentXStart - tolerance <= xCenter && xCenter <= header.contentXEnd + tolerance;
+    if (isCenterContainedByPrevContents) {
+      return header.name;
     }
   }
   // Fallback: find the closest header by center point

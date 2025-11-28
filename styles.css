@@ -1,6 +1,6 @@
 html,
 body {
-  background-color: rgb(251, 251, 251);
+  background: #f3fafd;
   height: 100%;
   margin: 0;
   display: flex;
@@ -13,7 +13,6 @@ body {
   font-family: "Noto Serif SC", serif;
   padding: 10px;
   border-radius: 10px;
-  margin: 30px 50px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -35,15 +34,20 @@ body {
   border-radius: 10px;
   width: 100%;
   text-align: center;
+  margin: 0;
 }
 
 #drop-area {
-  width: 60%;
+  width: 60vw;
+  height: 10vh;
   border-radius: 10px;
   padding: 20px;
   border: 4px dashed rgb(69, 69, 69);
   margin: 15px 0;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   transition: all ease 0.3s;
 }
 
@@ -75,14 +79,17 @@ td {
 
 th {
   color: rgb(200, 74, 74);
+  background-color: rgba(255, 255, 255, 0.879);
   font-size: 1rem;
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
 td {
   font-family: "helvetica";
   font-size: 0.8rem;
-  /* transition: all ease 0.2s; */
 }
 
 th.left,
@@ -105,37 +112,51 @@ table {
   border-spacing: 0 5px;
   width: auto;
   border-radius: 10px;
-  margin-top: 20px;
+}
+
+#button-and-output-container {
+  position: relative;
+  margin: 10px;
 }
 
 #output-container {
-  background-color: rgb(251, 251, 251);
+  background-color: rgb(255, 255, 255);
   display: flex;
   flex-direction: column;
-  margin: 30px 10px;
-  padding: 30px 10px 10px 10px;
-  width: 90%;
+  padding: 10px;
+  width: 84vw;
   border-radius: 10px;
+  border-top-right-radius: 0;
   position: relative;
   min-height: 20px;
+  max-height: 75vh;
+  overflow-y: auto;
   align-items: center;
-  overflow-x: auto;
 }
 
 #button-container {
+  padding: 10px;
+  display: flex;
+  gap: 10px;
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: -53px;
+  right: 0;
+  background-color: rgb(255, 255, 255);
+  border-radius: 10px;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+  box-shadow: -2px -2px 12px rgba(0, 0, 0, 0.121);
 }
 
 button {
-  background-color: rgb(226, 238, 250);
+  background-color: rgb(204, 222, 243);
   border-radius: 10px;
   border: none;
-  font-size: 0.9rem;
-  padding: 8px;
+  font-size: 0.7rem;
+  padding: 10px;
   transition: all ease 0.2s;
-  min-width: 60px;
+  min-width: 2.5vw;
+  max-width: 5vw;
 }
 
 button:hover {
@@ -176,11 +197,14 @@ button svg {
 
 #output-table {
   position: relative;
+  max-width: 90%;
+  border-radius: 10px;
+  padding: 10px 65px;
 }
 
 #table-overlay {
   position: absolute;
-  top: 50px;
+  top: 0;
   left: 0;
   right: 0;
   bottom: 0;
@@ -188,11 +212,11 @@ button svg {
   opacity: 0;
   pointer-events: none;
   transition: all ease 0.2s;
-  z-index: 10;
+  z-index: 4;
 }
 
-#drop-area.highlight ~ #output-container #table-overlay,
-#drop-area:hover ~ #output-container #table-overlay {
+#drop-area.highlight ~ #button-and-output-container #table-overlay,
+#drop-area:hover ~ #button-and-output-container #table-overlay {
   opacity: 1;
 }
 
@@ -214,6 +238,7 @@ tr[data-tooltip]::after {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.1s ease;
+  z-index: 6;
 }
 
 tr[data-tooltip]:hover::after {
@@ -242,7 +267,6 @@ tr[data-tooltip]:hover::after {
   font-size: 0.8rem;
   color: #777;
   padding: 12px 0;
-  margin-top: 40px;
 }
 
 .no-pdf-files {

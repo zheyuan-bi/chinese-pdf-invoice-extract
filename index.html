@@ -21,7 +21,7 @@
         <input type="file" id="file-input" accept=".pdf" multiple />
         <span id="file-status">0 PDF files selected</span>
       </div>
-      <div id="output-container">
+      <div id="button-and-output-container">
         <div id="button-container">
           <button id="copy-button">
             <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -46,25 +46,25 @@
             </svg>
           </button>
         </div>
-
-        <div id="output-table">
-          <div id="table-overlay"></div>
-          <table>
-            <thead>
-              <tr>
-                <th title="bradar">发票号码</th>
-                <th>项目名称</th>
-                <th class="left">规格型号</th>
-                <th>单位</th>
-                <th class="right">数量</th>
-                <th class="right">单价</th>
-                <th class="right">金额</th>
-                <th>税率/征税率</th>
-                <th class="right">税额</th>
-              </tr>
-            </thead>
-            <tbody id="table-body">
-              <!-- <tr data-tooltip="dzfp_110.pdf">
+        <div id="table-overlay"></div>
+        <div id="output-container">
+          <div id="output-table">
+            <table>
+              <thead>
+                <tr>
+                  <th title="bradar">发票号码</th>
+                  <th>项目名称</th>
+                  <th class="left">规格型号</th>
+                  <th>单位</th>
+                  <th class="right">数量</th>
+                  <th class="right">单价</th>
+                  <th class="right">金额</th>
+                  <th>税率/征税率</th>
+                  <th class="right">税额</th>
+                </tr>
+              </thead>
+              <tbody id="table-body">
+                <!-- <tr data-tooltip="dzfp_110.pdf">
                 <td class="new-invoice">25317xxxxxxxxxxx7778</td>
                 <td>*医疗仪器器械*牙科种植体</td>
                 <td class="left">K1046.3813</td>
@@ -97,8 +97,9 @@
                 <td></td>
                 <td class="right">0</td>
               </tr> -->
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
