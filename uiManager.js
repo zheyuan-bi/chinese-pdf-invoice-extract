@@ -19,62 +19,89 @@ const mainContainer = document.getElementById("main-container");
 const fileInput = document.getElementById("file-input");
 const fileStatus = document.getElementById("file-status");
 const tableBody = document.getElementById("table-body");
+const headerRow = document.getElementById("header-row"); // New
 const dropArea = document.getElementById("drop-area");
 const copyButton = document.getElementById("copy-button");
 const clearButton = document.getElementById("clear-button");
+const settingsButton = document.getElementById("settings-button"); // New
+const columnSelectorPanel = document.getElementById("column-selector-panel"); // New
+const checkboxContainer = document.getElementById("checkbox-container"); // New
+
+function renderTableHeader() {
+  headerRow.innerHTML = "";
+  displayColumns.forEach((column) => {
+    if (column.visible) {
+      const th = document.createElement("th");
+      th.textContent = column.name;
+      th.classList.add(column.level);
+      headerRow.appendChild(th);
+    }
+  });
+}
 
 function renderTable(files) {
+  tableBody.innerHTML = ""; // Clear existing
+  renderTableHeader(); // Rebuild the headers to match visibility
+
+  // The Ghost Container: This makes rendering 1000s of rows incredibly fast!
+  const fragment = document.createDocumentFragment();
+
   if (files.length === 0) {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
     cell.textContent = "No pdf file detected";
-    cell.colSpan = displayColumns.length;
+    // Calculate how many columns are actually visible
+    cell.colSpan = displayColumns.filter((c) => c.visible).length;
     cell.classList.add("no-pdf-files");
     row.appendChild(cell);
-    tableBody.appendChild(row);
-    return;
+    fragment.appendChild(row);
+  } else {
+    files.forEach((file) => {
+      if (file.lineItems && file.lineItems.length > 0) {
+        file.lineItems.forEach((item, index) => {
+          const row = document.createElement("tr");
+          row.setAttribute("data-tooltip", file.fileName);
+
+          displayColumns.forEach((column) => {
+            // ONLY render the cell if the column is checked!
+            if (column.visible) {
+              const cell = document.createElement("td");
+              const value = item[column.name];
+              const displayValue = value !== undefined ? value : "";
+              cell.classList.add(column.alignment);
+              cell.classList.add(column.level);
+              cell.textContent = displayValue;
+              if (displayValue !== "") {
+                cell.setAttribute("title", displayValue);
+              }
+
+              // Mark the start of a file's data
+              if (index === 0 && column.name === "发票号码") {
+                cell.classList.add("new-invoice");
+              }
+              row.appendChild(cell);
+            }
+          });
+          fragment.appendChild(row);
+        });
+      } else {
+        // Handle files with no line items
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        row.setAttribute("data-tooltip", file.fileName);
+        cell.colSpan = displayColumns.filter((c) => c.visible).length;
+        cell.textContent = `File: "${file.fileName}" - No line items found or file is not a valid invoice.`;
+        cell.style.textAlign = "left";
+        cell.style.color = "#777";
+        cell.classList.add("new-invoice");
+        row.appendChild(cell);
+        fragment.appendChild(row);
+      }
+    });
   }
 
-  files.forEach((file) => {
-    if (file.lineItems && file.lineItems.length > 0) {
-      file.lineItems.forEach((item, index) => {
-        const row = document.createElement("tr");
-        row.setAttribute("data-tooltip", file.fileName);
-        displayColumns.forEach((column) => {
-          const cell = document.createElement("td");
-          const value = item[column.name];
-          const displayValue = value !== undefined ? value : "";
-          cell.classList.add(column.alignment);
-          cell.classList.add(column.level);
-          cell.textContent = displayValue;
-          if (displayValue !== "") {
-            cell.setAttribute("title", displayValue);
-          }
-
-          // Mark the start of a file's data
-          if (index === 0 && column.name === "发票号码") {
-            cell.classList.add("new-invoice");
-          }
-          row.appendChild(cell);
-        });
-        tableBody.appendChild(row);
-      });
-    } else {
-      // This file had no line items, so we render a status row
-      const row = document.createElement("tr");
-      const cell = document.createElement("td");
-      row.setAttribute("data-tooltip", file.fileName);
-      // colspan makes this cell span the entire width of the table
-      cell.colSpan = displayColumns.length;
-      cell.textContent = `File: "${file.fileName}" - No line items found or file is not a valid invoice.`;
-      cell.style.textAlign = "left";
-      cell.style.color = "#777";
-      cell.classList.add("new-invoice");
-
-      row.appendChild(cell);
-      tableBody.appendChild(row);
-    }
-  });
+  // Inject the ghost container into the real DOM all at once
+  tableBody.appendChild(fragment);
 }
 
 function clearPage() {
@@ -100,7 +127,11 @@ export {
   dropArea,
   copyButton,
   clearButton,
+  settingsButton,
+  columnSelectorPanel,
+  checkboxContainer,
   renderTable,
+  renderTableHeader,
   clearPage,
   renderClick,
   displayColumns,

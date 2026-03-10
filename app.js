@@ -6,13 +6,59 @@ import {
   dropArea,
   copyButton,
   clearButton,
+  settingsButton,
+  columnSelectorPanel,
+  checkboxContainer,
   renderTable,
+  renderTableHeader,
   clearPage,
   renderClick,
   displayColumns,
 } from "./uiManager.js";
 
 const allFilesData = [];
+
+renderTableHeader();
+initializeCheckboxes();
+
+function initializeCheckboxes() {
+  displayColumns.forEach((column) => {
+    const label = document.createElement("label");
+    label.className = "checkbox-row";
+    label.addEventListener("click", (e) => {
+      // If the target of the click IS NOT the checkbox, stop it
+      if (e.target.type !== "checkbox") {
+        e.preventDefault();
+      }
+    });
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = column.visible;
+    if (column.name === "发票号码") checkbox.disabled = true;
+
+    checkbox.addEventListener("change", (e) => {
+      column.visible = e.target.checked;
+      // Re-render the table instantly when a checkbox is toggled
+      renderTable(allFilesData);
+    });
+
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode(" " + column.name));
+    checkboxContainer.appendChild(label);
+  });
+}
+
+settingsButton.addEventListener("click", () => {
+  columnSelectorPanel.classList.toggle("hidden");
+});
+
+// Hide panel if user clicks outside of it
+document.addEventListener("click", (e) => {
+  if (!settingsButton.contains(e.target) && !columnSelectorPanel.contains(e.target)) {
+    columnSelectorPanel.classList.add("hidden");
+  }
+});
 
 ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
   dropArea.addEventListener(eventName, preventDefaults, false);
