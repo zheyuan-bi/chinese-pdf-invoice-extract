@@ -7,6 +7,7 @@ const mainLinepattern = /^\*[^*]+\*.+$/;
 // Meaningful space: a divider of text, takes up a fixed width, usually 4.5. e.g. iPhone 12 Pro Max
 // Meaningless space: fills the gap between distinct blocks, takes up random width, e.g. iPad 2 pcs 999 1998 13% 259.74
 const WIDTH_OF_MEANINGFUL_SPACE_45 = 4.5;
+const HEIGHT_OF_MEANINGFUL_SPACE45 = 4.5;
 
 async function extractText(pdfData, fileName) {
   const CMAP_URL = "https://unpkg.com/pdfjs-dist@4.4.168/cmaps/";
@@ -19,22 +20,29 @@ async function extractText(pdfData, fileName) {
   const pdf = await loadingTask.promise;
 
   let combinedLineItems = [];
-  let invoiceNumber = "Not Found";
-  // For different pages of the same file, header row number and header coordinates are the same
+  let headerInfo;
   let headerRowNumber = 0;
   let columnHeaders;
 
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
+
     const textContent = await page.getTextContent();
     if (textContent.items.length === 0) continue;
 
     let rows = textContent.items.sort((a, b) => b.transform[5] - a.transform[5]);
+    console.log(rows);
     rows = groupNearbyRows(rows);
     rows.forEach((row) => row.sort((a, b) => a.transform[4] - b.transform[4]));
     const finalRows = rows.map((row) => mergeContinuousBlocks(row));
+    console.log(finalRows);
 
-    if (invoiceNumber === "Not Found") invoiceNumber = findInvoiceNumber(finalRows);
+    // Header level information stays the same across pages within the same file, extracting on the first page is enough
+    if (i === 1) {
+      const viewport = page.getViewport({ scale: 1 });
+      const pageCenter = viewport.width / 2;
+      headerInfo = extractHeaderInfo(finalRows, pageCenter);
+    }
 
     if (headerRowNumber === 0) {
       headerRowNumber = getHeaderRowNumber(finalRows);
@@ -47,30 +55,89 @@ async function extractText(pdfData, fileName) {
   }
 
   combinedLineItems.forEach((item) => {
-    item["发票号码"] = invoiceNumber;
+    item["发票号码"] = headerInfo.invoiceNumber;
+    item["开票日期"] = headerInfo.invoiceDate;
+    item["买方名称"] = headerInfo.buyerName;
+    item["买方税号"] = headerInfo.buyerTaxNum;
+    item["卖方名称"] = headerInfo.sellerName;
+    item["卖方税号"] = headerInfo.sellerTaxNum;
   });
 
   return {
     fileName: fileName,
-    invoiceNumber: invoiceNumber,
+    invoiceNumber: headerInfo.invoiceNumber,
     lineItems: combinedLineItems,
     id: Date.now() + Math.random(),
   };
 }
 
-function findInvoiceNumber(rows) {
+function extractHeaderInfo(rows, pageCenter) {
+  let info = {
+    invoiceNumber: "Not Found",
+    invoiceDate: "Not Found",
+    buyerName: "Not Found",
+    buyerTaxNum: "Not Found",
+    sellerName: "Not Found",
+    sellerTaxNum: "Not Found",
+  };
+
   for (const row of rows) {
     const rowText = row.map((block) => block.str).join("");
-    if (rowText.includes("发票号码：") || rowText.includes("发票号码:")) {
+
+    if (info.invoiceNumber === "Not Found" && rowText.includes("发票号码")) {
       const match = rowText.match(/\b\d{20}\b/);
-      if (match) {
-        return match[0];
-      } else {
-        return `No invoice number found on the same line as "发票号码："`;
-      }
+      if (match) info.invoiceNumber = match[0];
+    }
+
+    if (info.invoiceDate === "Not Found" && rowText.includes("开票日期")) {
+      //colon could be ":" or "：", but it always follows the text "开票日期"
+      const index_of_colon = rowText.indexOf("开票日期") + "开票日期".length;
+      info.invoiceDate = rowText.substring(index_of_colon + 1);
+    }
+
+    if (rowText.includes("名称")) {
+      const buyerAndSellerInfo = getLeftRightHeaderInfo(row, pageCenter, "名称");
+      info.buyerName = buyerAndSellerInfo.buyerInfo;
+      info.sellerName = buyerAndSellerInfo.sellerInfo;
+    }
+
+    if (rowText.includes("统一社会信用代码/纳税人识别号")) {
+      const buyerAndSellerInfo = getLeftRightHeaderInfo(row, pageCenter, "统一社会信用代码/纳税人识别号");
+      info.buyerTaxNum = buyerAndSellerInfo.buyerInfo;
+      info.sellerTaxNum = buyerAndSellerInfo.sellerInfo;
+    }
+
+    if (
+      info.invoiceNumber !== "Not Found" &&
+      info.invoiceDate !== "Not Found" &&
+      info.buyerName !== "Not Found" &&
+      info.buyerTaxNum !== "Not Found" &&
+      info.sellerName !== "Not Found" &&
+      info.sellerTaxNum !== "Not Found"
+    ) {
+      break;
     }
   }
-  return "发票号码 is not found";
+
+  return info;
+}
+
+//This method grabs the header level buyer/seller info (company name, tax number)
+//This method uses the fact that the buyer/seller section are in the left/right side of the page, separated by the pageCenter
+function getLeftRightHeaderInfo(row, pageCenter, label) {
+  const leftHalfBlocks = row.filter((block) => block.xStart < pageCenter);
+  const rightHalfBlocks = row.filter((block) => block.xStart > pageCenter);
+
+  const leftHalfText = leftHalfBlocks.map((block) => block.str).join("");
+  const rightHalfText = rightHalfBlocks.map((block) => block.str).join("");
+
+  const index_of_left_half_colon = leftHalfText.indexOf(label) + label.length;
+  const index_of_right_half_colon = rightHalfText.indexOf(label) + label.length;
+
+  return {
+    buyerInfo: leftHalfText.substring(index_of_left_half_colon + 1),
+    sellerInfo: rightHalfText.substring(index_of_right_half_colon + 1),
+  };
 }
 
 /**
@@ -92,14 +159,14 @@ function groupNearbyRows(sortedRows) {
     for (const item of sortedRows) {
       const y = item.transform[5];
       const height = item.height;
-      const tolerance = height * 0.8;
-      if (height === 0 || prevY - y <= tolerance) {
+      const tolerance = 0.8 * (height === 0 ? HEIGHT_OF_MEANINGFUL_SPACE45 : height);
+      if (prevY - y <= tolerance) {
         currentRow.push(item);
       } else {
         rows.push(currentRow);
         currentRow = [item];
-        prevY = y;
       }
+      prevY = y;
     }
     rows.push(currentRow);
   }

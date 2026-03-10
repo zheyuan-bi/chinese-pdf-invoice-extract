@@ -1,13 +1,18 @@
 const displayColumns = [
-  { name: "发票号码", alignment: "center" },
-  { name: "项目名称", alignment: "center" },
-  { name: "规格型号", alignment: "left" },
-  { name: "单位", alignment: "center" },
-  { name: "数量", alignment: "right" },
-  { name: "单价", alignment: "right" },
-  { name: "金额", alignment: "right" },
-  { name: "税率/征收率", alignment: "center" },
-  { name: "税额", alignment: "right" },
+  { name: "发票号码", alignment: "center", level: "header-info", visible: true },
+  { name: "开票日期", alignment: "center", level: "header-info", visible: false },
+  { name: "买方名称", alignment: "center", level: "header-info", visible: false },
+  { name: "买方税号", alignment: "left", level: "header-info", visible: false },
+  { name: "卖方名称", alignment: "center", level: "header-info", visible: false },
+  { name: "卖方税号", alignment: "left", level: "header-info", visible: false },
+  { name: "项目名称", alignment: "center", level: "line-info", visible: true },
+  { name: "规格型号", alignment: "left", level: "line-info", visible: true },
+  { name: "单位", alignment: "center", level: "line", visible: true },
+  { name: "数量", alignment: "right", level: "line-info", visible: true },
+  { name: "单价", alignment: "right", level: "line-info", visible: true },
+  { name: "金额", alignment: "right", level: "line-info", visible: true },
+  { name: "税率/征收率", alignment: "center", level: "line-info", visible: true },
+  { name: "税额", alignment: "right", level: "line-info", visible: true },
 ];
 
 const mainContainer = document.getElementById("main-container");
@@ -38,8 +43,13 @@ function renderTable(files) {
         displayColumns.forEach((column) => {
           const cell = document.createElement("td");
           const value = item[column.name];
-          cell.textContent = value !== undefined ? value : "";
+          const displayValue = value !== undefined ? value : "";
           cell.classList.add(column.alignment);
+          cell.classList.add(column.level);
+          cell.textContent = displayValue;
+          if (displayValue !== "") {
+            cell.setAttribute("title", displayValue);
+          }
 
           // Mark the start of a file's data
           if (index === 0 && column.name === "发票号码") {

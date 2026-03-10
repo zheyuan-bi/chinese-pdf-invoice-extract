@@ -8,10 +8,10 @@ body {
 }
 
 #main-container {
-  background: linear-gradient(90deg, #f0fff3 25%, #d9eddd 50%, #f0fff3 75%);
+  background: linear-gradient(90deg, #e9dede 25%, #f5f4e9 50%, #e9dede 75%);
   background-size: 200% 100%;
   font-family: "Noto Serif SC", serif;
-  padding: 10px;
+  padding: 5px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -88,6 +88,18 @@ th {
 
 td {
   font-family: "helvetica";
+  white-space: nowrap;
+  overflow: hidden; /* 2. Hide text that goes beyond max-width */
+  text-overflow: ellipsis; /* 3. Add the "..." */
+  max-width: 150px;
+}
+
+td.header-info {
+  font-size: 0.65rem;
+  color: #777;
+}
+
+td.line-info {
   font-size: 0.8rem;
 }
 
@@ -101,6 +113,10 @@ td.right {
   text-align: right;
 }
 
+th.header {
+  font-size: 0.8rem;
+}
+
 td.new-invoice {
   border-left-style: solid;
   border-left-color: red;
@@ -108,8 +124,8 @@ td.new-invoice {
 
 table {
   border-collapse: separate;
-  border-spacing: 0 5px;
-  width: auto;
+  border-spacing: 0 2px;
+  min-width: 100%;
   border-radius: 10px;
 }
 
@@ -122,13 +138,14 @@ table {
   background-color: rgb(255, 255, 255);
   display: flex;
   flex-direction: column;
-  padding: 10px;
-  width: 84vw;
+  padding: 5px;
+  width: 95vw;
   border-radius: 10px;
   border-top-right-radius: 0;
   position: relative;
   min-height: 20px;
   max-height: 75vh;
+  overflow-x: auto;
   overflow-y: auto;
   align-items: center;
 }
@@ -197,7 +214,7 @@ button svg {
   position: relative;
   max-width: 90%;
   border-radius: 10px;
-  padding: 10px 65px;
+  padding: 10px 5px;
 }
 
 #table-overlay {
@@ -211,6 +228,7 @@ button svg {
   pointer-events: none;
   transition: all ease 0.2s;
   z-index: 4;
+  border-radius: 10px;
 }
 
 #drop-area.highlight ~ #button-and-output-container #table-overlay,
