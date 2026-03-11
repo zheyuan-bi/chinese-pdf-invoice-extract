@@ -11,6 +11,8 @@ import {
   checkboxContainer,
   renderTable,
   renderTableHeader,
+  toggleColumn,
+  renderColGroup,
   clearPage,
   renderClick,
   displayColumns,
@@ -18,11 +20,12 @@ import {
 
 const allFilesData = [];
 
+renderColGroup();
 renderTableHeader();
 initializeCheckboxes();
 
 function initializeCheckboxes() {
-  displayColumns.forEach((column) => {
+  displayColumns.forEach((column, index) => {
     const label = document.createElement("label");
     label.className = "checkbox-row";
     label.addEventListener("click", (e) => {
@@ -40,7 +43,7 @@ function initializeCheckboxes() {
     checkbox.addEventListener("change", (e) => {
       column.visible = e.target.checked;
       // Re-render the table instantly when a checkbox is toggled
-      renderTable(allFilesData);
+      toggleColumn(index, e.target.checked);
     });
 
     label.appendChild(checkbox);
@@ -151,10 +154,14 @@ function writeDataToClipboard() {
     return;
   }
 
-  const headerString = displayColumns.map((column) => column.name).join("\t");
+  const headerString = displayColumns
+    .filter((c) => c.visible)
+    .map((column) => column.name)
+    .join("\t");
 
   const lineStrings = allLines.map((lineItem) => {
     return displayColumns
+      .filter((c) => c.visible)
       .map((column) => {
         let value = lineItem[column.name];
         if (column.name === "发票号码") {

@@ -19,29 +19,49 @@ const mainContainer = document.getElementById("main-container");
 const fileInput = document.getElementById("file-input");
 const fileStatus = document.getElementById("file-status");
 const tableBody = document.getElementById("table-body");
-const headerRow = document.getElementById("header-row"); // New
+const headerRow = document.getElementById("header-row");
 const dropArea = document.getElementById("drop-area");
 const copyButton = document.getElementById("copy-button");
 const clearButton = document.getElementById("clear-button");
-const settingsButton = document.getElementById("settings-button"); // New
-const columnSelectorPanel = document.getElementById("column-selector-panel"); // New
-const checkboxContainer = document.getElementById("checkbox-container"); // New
+const settingsButton = document.getElementById("settings-button");
+const columnSelectorPanel = document.getElementById("column-selector-panel");
+const checkboxContainer = document.getElementById("checkbox-container");
+const colGroup = document.getElementById("table-colgroup");
+const columnElements = [];
+
+function renderColGroup() {
+  colGroup.innerHTML = "";
+  columnElements.length = 0;
+
+  displayColumns.forEach((column, index) => {
+    const col = document.createElement("col");
+
+    if (!column.visible) col.style.visibility = "collapse";
+
+    columnElements[index] = col;
+    colGroup.appendChild(col);
+  });
+}
 
 function renderTableHeader() {
   headerRow.innerHTML = "";
   displayColumns.forEach((column) => {
-    if (column.visible) {
-      const th = document.createElement("th");
-      th.textContent = column.name;
-      th.classList.add(column.level);
-      headerRow.appendChild(th);
-    }
+    const th = document.createElement("th");
+    th.textContent = column.name;
+    th.classList.add(column.level);
+    headerRow.appendChild(th);
   });
+}
+
+function toggleColumn(index, visible) {
+  const col = columnElements[index];
+  if (!col) return;
+
+  col.style.visibility = visible ? "" : "collapse";
 }
 
 function renderTable(files) {
   tableBody.innerHTML = ""; // Clear existing
-  renderTableHeader(); // Rebuild the headers to match visibility
 
   // The Ghost Container: This makes rendering 1000s of rows incredibly fast!
   const fragment = document.createDocumentFragment();
@@ -50,8 +70,7 @@ function renderTable(files) {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
     cell.textContent = "No pdf file detected";
-    // Calculate how many columns are actually visible
-    cell.colSpan = displayColumns.filter((c) => c.visible).length;
+    cell.colSpan = displayColumns.length;
     cell.classList.add("no-pdf-files");
     row.appendChild(cell);
     fragment.appendChild(row);
@@ -63,24 +82,21 @@ function renderTable(files) {
           row.setAttribute("data-tooltip", file.fileName);
 
           displayColumns.forEach((column) => {
-            // ONLY render the cell if the column is checked!
-            if (column.visible) {
-              const cell = document.createElement("td");
-              const value = item[column.name];
-              const displayValue = value !== undefined ? value : "";
-              cell.classList.add(column.alignment);
-              cell.classList.add(column.level);
-              cell.textContent = displayValue;
-              if (displayValue !== "") {
-                cell.setAttribute("title", displayValue);
-              }
-
-              // Mark the start of a file's data
-              if (index === 0 && column.name === "发票号码") {
-                cell.classList.add("new-invoice");
-              }
-              row.appendChild(cell);
+            const cell = document.createElement("td");
+            const value = item[column.name];
+            const displayValue = value !== undefined ? value : "";
+            cell.classList.add(column.alignment);
+            cell.classList.add(column.level);
+            cell.textContent = displayValue;
+            if (displayValue !== "") {
+              cell.setAttribute("title", displayValue);
             }
+
+            // Mark the start of a file's data
+            if (index === 0 && column.name === "发票号码") {
+              cell.classList.add("new-invoice");
+            }
+            row.appendChild(cell);
           });
           fragment.appendChild(row);
         });
@@ -89,10 +105,13 @@ function renderTable(files) {
         const row = document.createElement("tr");
         const cell = document.createElement("td");
         row.setAttribute("data-tooltip", file.fileName);
-        cell.colSpan = displayColumns.filter((c) => c.visible).length;
+        cell.colSpan = displayColumns.length;
         cell.textContent = `File: "${file.fileName}" - No line items found or file is not a valid invoice.`;
         cell.style.textAlign = "left";
         cell.style.color = "#777";
+        cell.style.fontFamily = "helvetica";
+        cell.style.fontStyle = "italic";
+        cell.style.fontSize = "13px";
         cell.classList.add("new-invoice");
         row.appendChild(cell);
         fragment.appendChild(row);
@@ -132,6 +151,8 @@ export {
   checkboxContainer,
   renderTable,
   renderTableHeader,
+  toggleColumn,
+  renderColGroup,
   clearPage,
   renderClick,
   displayColumns,

@@ -20,7 +20,14 @@ async function extractText(pdfData, fileName) {
   const pdf = await loadingTask.promise;
 
   let combinedLineItems = [];
-  let headerInfo;
+  let headerInfo = {
+    invoiceNumber: "Not Found",
+    invoiceDate: "Not Found",
+    buyerName: "Not Found",
+    buyerTaxNum: "Not Found",
+    sellerName: "Not Found",
+    sellerTaxNum: "Not Found",
+  };
   let headerRowNumber = 0;
   let columnHeaders;
 
@@ -31,11 +38,11 @@ async function extractText(pdfData, fileName) {
     if (textContent.items.length === 0) continue;
 
     let rows = textContent.items.sort((a, b) => b.transform[5] - a.transform[5]);
-    console.log(rows);
+    // console.log(rows);
     rows = groupNearbyRows(rows);
     rows.forEach((row) => row.sort((a, b) => a.transform[4] - b.transform[4]));
     const finalRows = rows.map((row) => mergeContinuousBlocks(row));
-    console.log(finalRows);
+    // console.log(finalRows);
 
     // Header level information stays the same across pages within the same file, extracting on the first page is enough
     if (i === 1) {
