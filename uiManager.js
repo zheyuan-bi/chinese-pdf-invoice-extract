@@ -27,18 +27,15 @@ const settingsButton = document.getElementById("settings-button");
 const columnSelectorPanel = document.getElementById("column-selector-panel");
 const checkboxContainer = document.getElementById("checkbox-container");
 const colGroup = document.getElementById("table-colgroup");
-const columnElements = [];
 
 function renderColGroup() {
   colGroup.innerHTML = "";
-  columnElements.length = 0;
 
-  displayColumns.forEach((column, index) => {
+  displayColumns.forEach((column) => {
     const col = document.createElement("col");
 
     if (!column.visible) col.style.visibility = "collapse";
 
-    columnElements[index] = col;
     colGroup.appendChild(col);
   });
 }
@@ -54,7 +51,7 @@ function renderTableHeader() {
 }
 
 function toggleColumn(index, visible) {
-  const col = columnElements[index];
+  const col = colGroup.children[index];
   if (!col) return;
 
   col.style.visibility = visible ? "" : "collapse";
