@@ -1,3 +1,5 @@
+const COLUMN_VISIBILITY_KEY = "invoice_table_column_visibility";
+
 const displayColumns = [
   { name: "发票号码", alignment: "center", level: "header-info", visible: true },
   { name: "开票日期", alignment: "center", level: "header-info", visible: false },
@@ -136,6 +138,29 @@ function renderClick(button) {
   }, 2000);
 }
 
+function saveColumnVisibility() {
+  const visibility = {};
+
+  displayColumns.forEach((col) => {
+    visibility[col.name] = col.visible;
+  });
+
+  localStorage.setItem(COLUMN_VISIBILITY_KEY, JSON.stringify(visibility));
+}
+
+function loadColumnVisibility() {
+  const saved = localStorage.getItem(COLUMN_VISIBILITY_KEY);
+  if (!saved) return;
+
+  const visibility = JSON.parse(saved);
+
+  displayColumns.forEach((col) => {
+    if (visibility[col.name] !== undefined) {
+      col.visible = visibility[col.name];
+    }
+  });
+}
+
 export {
   mainContainer,
   fileInput,
@@ -152,5 +177,7 @@ export {
   renderColGroup,
   clearPage,
   renderClick,
+  saveColumnVisibility,
+  loadColumnVisibility,
   displayColumns,
 };

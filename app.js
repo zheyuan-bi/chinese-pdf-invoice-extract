@@ -15,11 +15,14 @@ import {
   renderColGroup,
   clearPage,
   renderClick,
+  saveColumnVisibility,
+  loadColumnVisibility,
   displayColumns,
 } from "./uiManager.js";
 
 const allFilesData = [];
 
+loadColumnVisibility();
 renderColGroup();
 renderTableHeader();
 initializeCheckboxes();
@@ -44,6 +47,7 @@ function initializeCheckboxes() {
       column.visible = e.target.checked;
       // Re-render the table instantly when a checkbox is toggled
       toggleColumn(index, e.target.checked);
+      saveColumnVisibility();
     });
 
     label.appendChild(checkbox);
