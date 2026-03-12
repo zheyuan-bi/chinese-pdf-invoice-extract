@@ -150,7 +150,7 @@ function writeDataToClipboard() {
   const allLines = allFilesData.flatMap((file) => file.lineItems);
 
   if (allLines.length === 0) {
-    navigator.clipboard.writeText("https://isotropic.org/papers/chicken.pdf");
+    navigator.clipboard.writeText("https://everynoise.com/");
     return;
   }
 
