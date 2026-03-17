@@ -2,6 +2,8 @@ import * as pdfjsLib from "https://unpkg.com/pdfjs-dist@4.4.168/build/pdf.mjs";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "https://unpkg.com/pdfjs-dist@4.4.168/build/pdf.worker.mjs";
 
+// The "项目名称" column of invoice lines will always follow the pattern *Category*Name like *办公用品*打印纸, and it will never be empty
+// We can use this pattern to determine whether the current line is a main line or wrapped text
 const mainLinepattern = /^\*[^*]+\*.+$/;
 // There are 2 kinds of space elements in a row: meaningful and meaningless
 // Meaningful space: a divider of text, takes up a fixed width, usually 4.5. e.g. iPhone 12 Pro Max
@@ -131,6 +133,7 @@ function extractHeaderInfo(rows, pageCenter) {
 
 //This method grabs the header level buyer/seller info (company name, tax number)
 //This method uses the fact that the buyer/seller section are in the left/right side of the page, separated by the pageCenter
+//Colon logic: same as "开票日期", there will always be a colon right after the label with no space in between.
 function getLeftRightHeaderInfo(row, pageCenter, label) {
   const leftHalfBlocks = row.filter((block) => block.xStart < pageCenter);
   const rightHalfBlocks = row.filter((block) => block.xStart > pageCenter);
@@ -161,12 +164,13 @@ function groupNearbyRows(sortedRows) {
   // upperBlock = {height: 10.99, y: 148.616}, lowerBlock = {height: 8.99, y: 141.683}
   const rows = [];
   let currentRow = [];
+  const toleranceCoefficient = 0.8;
   if (sortedRows.length > 0) {
     let prevY = sortedRows[0].transform[5];
     for (const item of sortedRows) {
       const y = item.transform[5];
       const height = item.height;
-      const tolerance = 0.8 * (height === 0 ? HEIGHT_OF_MEANINGFUL_SPACE45 : height);
+      const tolerance = toleranceCoefficient * (height === 0 ? HEIGHT_OF_MEANINGFUL_SPACE45 : height);
       if (prevY - y <= tolerance) {
         currentRow.push(item);
       } else {

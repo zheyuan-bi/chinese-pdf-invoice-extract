@@ -152,13 +152,17 @@ function loadColumnVisibility() {
   const saved = localStorage.getItem(COLUMN_VISIBILITY_KEY);
   if (!saved) return;
 
-  const visibility = JSON.parse(saved);
+  try {
+    const visibility = JSON.parse(saved);
 
-  displayColumns.forEach((col) => {
-    if (visibility[col.name] !== undefined) {
-      col.visible = visibility[col.name];
-    }
-  });
+    displayColumns.forEach((col) => {
+      if (visibility[col.name] !== undefined) {
+        col.visible = visibility[col.name];
+      }
+    });
+  } catch {
+    return;
+  }
 }
 
 export {
