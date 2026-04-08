@@ -89,9 +89,9 @@ th {
 td {
   font-family: "helvetica";
   white-space: nowrap;
-  /* overflow: hidden; 
-  text-overflow: ellipsis;  */
-  max-width: 230px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 270px;
 }
 
 td.header-info {

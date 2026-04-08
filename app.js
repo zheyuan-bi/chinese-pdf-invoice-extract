@@ -154,7 +154,7 @@ function writeDataToClipboard() {
   const allLines = allFilesData.flatMap((file) => file.lineItems);
 
   if (allLines.length === 0) {
-    navigator.clipboard.writeText("https://everynoise.com/");
+    navigator.clipboard.writeText("https://www.nasa.gov/gallery/lunar-flyby/");
     return;
   }
 
